@@ -1,0 +1,48 @@
+package trigger;
+
+import java.util.Arrays;
+
+import stocks.Candlestick;
+import stocks.Numerics;
+
+public class TriggerSteadyDump extends TriggerSuddenDump {
+
+	public TriggerSteadyDump() throws Exception { super("steadydump"); }
+
+	public boolean isTriggered(Candlestick[] candles, Candlestick[] btcCandles, int index) {
+		if (isSteadyDump(Arrays.copyOfRange(candles, 0, index + 1))) {
+			try {
+				return true;
+			} catch (Exception e) { return false; }
+		} else {
+			return false;
+		}
+	}
+
+	private boolean isSteadyDump(Candlestick[] candles) {
+		boolean meets = wasSteadyDump(candles);
+		Candlestick[] candles2;
+		for (int i = 0; i < 48; i ++) {
+			candles2 = Arrays.copyOfRange(candles, 0, candles.length - (i + 1));
+			if (wasSteadyDump(candles2)) {
+				return false;
+			}
+		}
+
+		return meets;
+	}
+
+	private boolean wasSteadyDump(Candlestick[] candles) {
+		boolean steady = true;
+		for (int i = -3; i < 0; i ++) {
+			if (candles[candles.length+i].delta() >= 0) { return false; }
+		}
+		if (Numerics.pc(candles[candles.length-3].getOpen(), candles[candles.length-1].getClose()) > Candlestick.DUMP_DELTA) {
+			return false;
+		}
+		if (candles[candles.length-1].getClose() > Candlestick.low(Arrays.copyOfRange(candles, candles.length - 48, candles.length - 1))) {
+			return false;
+		}
+		return steady;
+	}
+}
